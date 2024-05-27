@@ -22,6 +22,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS){
 		glfwSetWindowShouldClose(window, GLFW_TRUE);
 	}
+
 }
 
 int main() {
@@ -58,7 +59,7 @@ int main() {
 #endif
 
 	//Create the glfw window.
-	GLFWwindow* window = glfwCreateWindow(640, 480, "DSRender", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(800, 640, "DSRender", NULL, NULL);
 	if(!window){
 		std::cerr << "Failed to init glfwWindow" << std::endl;
 		glfwTerminate();
@@ -67,7 +68,7 @@ int main() {
 	std::cout << "Initialized GLFW Window" << std::endl;
 
 	glfwMakeContextCurrent(window);
-	glfwSwapInterval(1); //Set 1 cycle minimum swap window inorder to reduce wasted calls.
+	glfwSwapInterval(0); // This is v-sync. Caps framerate of window to refreshrate.
 	glfwSetKeyCallback(window, key_callback);
 
 	// Setup ImGui context
@@ -90,15 +91,15 @@ int main() {
 	}
 	std::cout << "Initialized OpenGL" << std::endl;
 
-	//Our main loop :)
-	double deltaTime = 0;
+	// Our main loop :)
+	// double deltaTime = 0;
 	double upTime = 0;
 
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
 	bool first = true;
 	while(!glfwWindowShouldClose(window)){  
-		std::cout << "Delta T: " << deltaTime << "\n";
+		// std::cout << "Delta T: " << deltaTime << "\n";
 
 		//ImGUI Debug Frame
 		ImGui_ImplOpenGL3_NewFrame();
@@ -140,7 +141,7 @@ int main() {
 		glfwPollEvents();
 
 		//Time + deltaTime tracking.
-		deltaTime = glfwGetTime() - upTime;
+		// deltaTime = glfwGetTime() - upTime;
 		upTime = glfwGetTime();
 	}
 
