@@ -11,6 +11,7 @@ add_subdirectory(3rdparty/glfw)
 # Include directories
 include_directories(3rdparty/glfw/include)
 include_directories(3rdparty/glfw/deps)
+include_directories(3rdparty/glfw/deps/glad)
 
 # Add executable
 add_executable(DSRender main.cpp)

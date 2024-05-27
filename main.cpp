@@ -1,11 +1,11 @@
 #include <iostream>
 
 // Use GLFW for surfaces.
+#define GLAD_GL_IMPLEMENTATION
+#include <glad/gl.h>
 #define GLFW_INCLUDE_NONE
-#include "3rdparty\glfw\deps\glad\gl.h"
-#include "3rdparty/glfw/include/GLFW/glfw3.h"
+#include <GLFW/glfw3.h>
 
-// #include "glfwManager.hpp"
 #include "stdio.h"
 
 // Error callback for glfw.
@@ -39,20 +39,32 @@ int main() {
 	}
 
 	glfwMakeContextCurrent(window);
+	glfwSwapInterval(1); //Set 1 cycle minimum swap window inorder to reduce wasted calls.
 	glfwSetKeyCallback(window, key_callback);
 
 	if(!gladLoadGL(glfwGetProcAddress)){
-
+		std::cerr << "Failed to init OpenGL" << std::endl;
 	}
+	std::cout << "Initialized OpenGL" << std::endl;
 
 	//Our main loop :)
+	double deltaTime = 0;
+	double upTime = 0;
+
 	bool first = true;
-	while(!glfwWindowShouldClose(window)){
-		if(first){
-			std::cout << "Entered main loop" << std::endl;
-			first = false;
-		}
+	while(!glfwWindowShouldClose(window)){  
+		std::cout << "Delta T: " << deltaTime << "\n";
 		
+		int width, height;
+		glfwGetFramebufferSize(window, &width, &height);
+		glViewport(0, 0, width, height);
+
+		glfwSwapBuffers(window);
+		glfwPollEvents();
+
+		//Time + deltaTime tracking.
+		deltaTime = glfwGetTime() - upTime;
+		upTime = glfwGetTime();
 	}
 	
 	//Free the window.
