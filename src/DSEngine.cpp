@@ -9,12 +9,24 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
-DSEngine::DSEngine(){ // Will try to initialize GLFW and imgui.
+DSEngine::DSEngine() : showDebug(false) { // Will try to initialize GLFW and imgui.
 	init();
+
+	// Setup shader map with default test shaders.
+	shaderMap.addShader("../shaders/test.frag");
+	shaderMap.addShader("../shaders/test.vert");
+
+	// shaderMap.showShaders();
+
+	std::string test_frag = shaderMap.getShader("test.frag", ShaderType::Fragment);
+	std::cout << "Test Frag: \n" << test_frag << std::endl;
+
+	std::cout << "Constructed DSEngine" << std::endl;
 };
 
 DSEngine::~DSEngine(){
 	cleanup();
+	std::cout << "Exiting Program" << std::endl;
 };
 
 void DSEngine::error_callback(int error, const char* description){
@@ -22,8 +34,21 @@ void DSEngine::error_callback(int error, const char* description){
 };
 
 void DSEngine::key_callback(GLFWwindow* window, int key, int scancode, int action, int mods){
-	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS){
-		glfwSetWindowShouldClose(window, GLFW_TRUE);
+	// std::cout << "Key callback" << std::endl;
+	if(action == GLFW_PRESS){
+		// std::cout << "Press Detected" << std::endl;
+		DSEngine* engine = static_cast<DSEngine*>(glfwGetWindowUserPointer(window));
+		if(engine){
+			// std::cout << "Engine cast to ptr" << std::endl;
+			if (key == GLFW_KEY_ESCAPE){
+				glfwSetWindowShouldClose(window, GLFW_TRUE);
+			}
+			if(key == GLFW_KEY_BACKSLASH){
+				engine->toggleDebug();
+			}
+		} else {
+			// std::cout << "Failed to cast engine" << std::endl;
+		}
 	}
 };
 
@@ -70,6 +95,7 @@ uint8_t DSEngine::init(){
 	}
 	std::cout << "Initialized GLFW Window" << std::endl;
 
+	glfwSetWindowUserPointer(window, this);
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(0); // This is v-sync. Caps framerate of window to refreshrate.
 	glfwSetKeyCallback(window, DSEngine::key_callback);
@@ -93,6 +119,10 @@ uint8_t DSEngine::init(){
 		return EXIT_FAILURE;
 	}
 	std::cout << "Initialized OpenGL" << std::endl;
+
+	//Want to read in shaders.
+
+
 	return EXIT_SUCCESS;
 }
 
@@ -115,6 +145,7 @@ uint8_t DSEngine::run(){
 	ImGuiIO& io = ImGui::GetIO();
 	double upTime = 0;
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+	ImVec2 debug_pos = ImVec2(0.0f, 0.0f);
 
 	bool first = true;
 	while(!glfwWindowShouldClose(window)){  
@@ -124,11 +155,10 @@ uint8_t DSEngine::run(){
 		}
 
 		glfwPollEvents();
-
-		//ImGUI Debug Frame
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
+		ImGui::SetNextWindowPos(debug_pos, ImGuiCond_Always);
 
 		//ImGui example frame.
 		static float f = 0.0f;
@@ -149,13 +179,17 @@ uint8_t DSEngine::run(){
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
         ImGui::End();
 
-		ImGui::Render(); // Render current ImGui frame to window. 
 		int width, height;
 		glfwGetFramebufferSize(window, &width, &height);
 		glViewport(0, 0, width, height);
 		glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
 		glClear(GL_COLOR_BUFFER_BIT);
-		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+		if(showDebug){ //Only draw imgui window if displaying debug.
+			ImGui::Render(); // Render current ImGui frame to window. 
+			ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+		}
+		
 
 		glfwSwapBuffers(window);
 		upTime = glfwGetTime();

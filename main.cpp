@@ -2,5 +2,8 @@
 
 int main() {
 	DSEngine engine;
+
 	engine.run();
+
+	return EXIT_SUCCESS;
 }
