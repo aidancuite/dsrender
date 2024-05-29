@@ -2,7 +2,7 @@
 
 void ShaderMap::showShaders(){
 	for(const auto& shader : shaderMap){
-		std::cout << shader.first.name << ", " << (int)shader.first.type << std::endl;
+		std::cout << shader.first.name << ", " << (int)shader.first.type << ", Size: " << shader.second.size() << std::endl;
 	}
 }
 

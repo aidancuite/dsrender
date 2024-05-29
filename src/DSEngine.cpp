@@ -16,10 +16,10 @@ DSEngine::DSEngine() : showDebug(false) { // Will try to initialize GLFW and img
 	shaderMap.addShader("../shaders/test.frag");
 	shaderMap.addShader("../shaders/test.vert");
 
-	// shaderMap.showShaders();
+	shaderMap.showShaders();
 
-	std::string test_frag = shaderMap.getShader("test.frag", ShaderType::Fragment);
-	std::cout << "Test Frag: \n" << test_frag << std::endl;
+	// std::string test_frag = shaderMap.getShader("test.frag", ShaderType::Fragment);
+	// std::cout << "Test Frag: \n" << test_frag << std::endl;
 
 	std::cout << "Constructed DSEngine" << std::endl;
 };
