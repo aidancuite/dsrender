@@ -9,6 +9,11 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <memory>
+#include <cstring>
+
+// Use GLFW for surfaces.
+#include <glad/gl.h>
 
 enum class ShaderType {
 	Unknown,
@@ -39,14 +44,14 @@ class ShaderMap {
 private:
 	// Map of ShaderKey to shader code
 	std::map<ShaderKey, std::string> shaderMap;
+	std::map<ShaderKey, const GLchar* const*> shaderPointerMap;
 
 public:
 	void showShaders();
-	std::map<ShaderKey, std::string> getMap(){return shaderMap;};
+	// std::map<ShaderKey, std::unique_ptr<const char[]>> getMap(){return shaderMap;};
 
 	std::string loadShaderFromFile(const std::string& filePath);
 	void addShader(const std::string& filePath);
 
-	std::string getShader(std::string name, ShaderType type); //Look up specific shader
-	std::vector<std::pair<ShaderKey, std::string>> getShadersByType(ShaderType type); //Get list of shaders by type, eg find all fragment shaders.
+	const GLchar* const* getShader(std::string name, ShaderType type); //Look up specific shader
 };

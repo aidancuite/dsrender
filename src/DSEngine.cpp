@@ -1,25 +1,18 @@
 #include "DSEngine.hpp"
 #include "stdio.h"
 
-// Use GLFW for surfaces.
-#define GLAD_GL_IMPLEMENTATION
-#include <glad/gl.h>
-
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
 DSEngine::DSEngine() : showDebug(false) { // Will try to initialize GLFW and imgui.
-	init();
-
 	// Setup shader map with default test shaders.
 	shaderMap.addShader("../shaders/test.frag");
 	shaderMap.addShader("../shaders/test.vert");
 
 	shaderMap.showShaders();
 
-	// std::string test_frag = shaderMap.getShader("test.frag", ShaderType::Fragment);
-	// std::cout << "Test Frag: \n" << test_frag << std::endl;
+	init();
 
 	std::cout << "Constructed DSEngine" << std::endl;
 };
@@ -54,7 +47,7 @@ void DSEngine::key_callback(GLFWwindow* window, int key, int scancode, int actio
 
 //Initialize ImGui and GLFW
 uint8_t DSEngine::init(){
-	std::cout << "Initialize DSEngine" << std::endl;
+	std::cout << "Initializing DSEngine" << std::endl;
 
 	glfwSetErrorCallback(DSEngine::error_callback);
 
@@ -77,15 +70,16 @@ uint8_t DSEngine::init(){
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // Required on Mac
-#else
-    // GL 3.0 + GLSL 130
-    const char* glsl_version = "#version 130";
+#elif defined(__WIN32__)
+    // GL 3.2 + GLSL 150
+    const char* glsl_version = "#version 150";
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-    //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
-    //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
+	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE); //Debug messages.
 #endif
-
+	
 	//Create the glfw window held in DSEngine.
 	window = glfwCreateWindow(800, 640, "DSRender", NULL, NULL);
 	if(!window){
@@ -93,13 +87,13 @@ uint8_t DSEngine::init(){
 		glfwTerminate();
 		return EXIT_FAILURE;
 	}
-	std::cout << "Initialized GLFW Window" << std::endl;
-
-	glfwSetWindowUserPointer(window, this);
+	
+	//Create window then do things.
 	glfwMakeContextCurrent(window);
+	glfwSetWindowUserPointer(window, this);
 	glfwSwapInterval(0); // This is v-sync. Caps framerate of window to refreshrate.
 	glfwSetKeyCallback(window, DSEngine::key_callback);
-
+	
 	// Setup ImGui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -111,18 +105,41 @@ uint8_t DSEngine::init(){
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init(glsl_version);
 
-	// OpenGL Integration
+	// OpenGL Integration and Initialization.
 	if(!gladLoadGL(glfwGetProcAddress)){
 		std::cerr << "Failed to init OpenGL" << std::endl;
 		glfwDestroyWindow(window);
 		glfwTerminate();
 		return EXIT_FAILURE;
 	}
+
+	const GLubyte* renderer = glGetString(GL_RENDERER); // Get renderer string
+	const GLubyte* version = glGetString(GL_VERSION); // Version as a string
+
+	std::cout << "Renderer: " << renderer << std::endl;
+	std::cout << "OpenGL version supported: " << version << std::endl;
+
+	glEnable(GL_DEBUG_OUTPUT);
+	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+	glDebugMessageCallback(glDebugOutput, nullptr);
+
+	std::cout << "Initialized GLFW Window" << std::endl;
+
+	//Setup OpenGL structs.
+	//Vertex Buffer
+	glGenBuffers(1, &vertex_buffer); //Generates one vertex buffer
+	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer); //Binds a buffer to a specific purpose/target.
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	std::cout << "Initialized vertex_buffer" << std::endl;
+
+	// Vertex shader
+	vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(vertex_shader, 1, shaderMap.getShader("test", ShaderType::Vertex), NULL);
+	glCompileShader(vertex_shader);
+
+	// std::cout << "Initialized vertex_shader" << std::endl;
+
 	std::cout << "Initialized OpenGL" << std::endl;
-
-	//Want to read in shaders.
-
-
 	return EXIT_SUCCESS;
 }
 
