@@ -1,12 +1,12 @@
-#version 430
+#version 450
 
-uniform mat4 MVP;
-in vec3 vCol;
-in vec2 vPos;
+layout (location = 0) in vec3 aPos; //Set location 0 to pos from program.
+layout (location = 1) in vec3 aColor; //Set location 1 to color from program.
+
 out vec3 color;
 
 void main()
 {
-	gl_Position = MVP * vec4(vPos, 0.0, 1.0);
-	color = vCol;
+    gl_Position = vec4(aPos, 1.0);
+    color = aColor;
 }

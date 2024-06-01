@@ -67,9 +67,9 @@ uint8_t DSEngine::init(){
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // Required on Mac
 #elif defined(__WIN32__)
     // GL 3.2 + GLSL 150
-    const char* glsl_version = "#version 150";
+    const char* glsl_version = "#version 450";
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
 #ifdef DEBUG
@@ -121,32 +121,33 @@ uint8_t DSEngine::init(){
 
 	std::cout << "Initialized GLFW Window" << std::endl;
 
+	float vertices[] = {
+        // positions         // colors
+         0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,  // bottom right
+        -0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,  // bottom left
+         0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f   // top 
+    };
+
 	//Setup OpenGL structs.
 	//Vertex Buffer
-	glGenBuffers(1, &vertex_buffer); //Generates one vertex buffer
-	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer); //Binds a buffer to a specific purpose/target.
+	glGenBuffers(1, &VBO); //Generates one vertex buffer
+	glGenVertexArrays(1, &VAO);
+	glBindVertexArray(VAO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO); //Binds a buffer to a specific purpose/target.
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-	std::cout << "Initialized vertex_buffer" << std::endl;
+	std::cout << "Initialized vertex_buffer/array" << std::endl;
 
-	Shader testShader("../shaders/test.vert", "../shaders/test.frag");
-	program = testShader.ID; //This seems kinda dumb
+	shaders.push_back(Shader("../shaders/test.vert", "../shaders/test.frag"));
+	std::cout << "Test shaders compiled and linked successfully" << std::endl;;
 
-	std::cout << "Test shaders compiled and linked successfully" << std::endl;
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)0); //0 Is index of VAO
+	glEnableVertexAttribArray(0);
 
-	mvp_location = glGetUniformLocation(program, "MVP");
-	vpos_location = glGetAttribLocation(program, "vPos");
-	vcol_location = glGetAttribLocation(program, "vCol");
-
-	std::cout << "mvp_location:" << mvp_location << std::endl;
-	std::cout << "vpos_location:" << vpos_location << std::endl;
-	std::cout << "vcol_location:" << vcol_location << std::endl;
-
-	glEnableVertexAttribArray(vpos_location);
-	glVertexAttribPointer(vpos_location, 2, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), (void*) 0);
-	glEnableVertexAttribArray(vcol_location);
-	glVertexAttribPointer(vcol_location, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), (void*)(sizeof(float) * 2));
-
-	std::cout << "Initialized OpenGL" << std::endl;
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)(3 * sizeof(float))); //1 Is index of VBO
+	glEnableVertexAttribArray(1);
+	
+	// std::cout << "Shaders compiled: " << shaders.size() << std::endl;
+	std::cout << "Initialized OpenGL" << std::endl;	
 	return EXIT_SUCCESS;
 }
 
@@ -177,8 +178,7 @@ uint8_t DSEngine::run(){
 			std::cout << "Begin mainloop" << std::endl;
 			first = false;
 		}
-
-		glfwPollEvents();
+		
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
@@ -209,13 +209,17 @@ uint8_t DSEngine::run(){
 		glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
 		glClear(GL_COLOR_BUFFER_BIT);
 
+		shaders[0].use();
+		glBindVertexArray(VAO);
+		glDrawArrays(GL_TRIANGLES, 0, 3);
+
 		if(showDebug){ //Only draw imgui window if displaying debug.
 			ImGui::Render(); // Render current ImGui frame to window. 
 			ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 		}
 		
-
 		glfwSwapBuffers(window);
+		glfwPollEvents();
 		upTime = glfwGetTime();
 	}
 
