@@ -23,7 +23,7 @@ DSEngine::~DSEngine(){
 };
 
 void DSEngine::error_callback(int error, const char* description){
-	fprintf(stderr, "Error: %s\n", description);
+	fprintf(stdout, "Error: %s\n", description);
 };
 
 void DSEngine::key_callback(GLFWwindow* window, int key, int scancode, int action, int mods){
@@ -73,8 +73,8 @@ uint8_t DSEngine::init(){
 #elif defined(__WIN32__)
     // GL 3.2 + GLSL 150
     const char* glsl_version = "#version 150";
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
 	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE); //Debug messages.
@@ -120,7 +120,7 @@ uint8_t DSEngine::init(){
 	std::cout << "OpenGL version supported: " << version << std::endl;
 
 	glEnable(GL_DEBUG_OUTPUT);
-	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+	// glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 	glDebugMessageCallback(glDebugOutput, nullptr);
 
 	std::cout << "Initialized GLFW Window" << std::endl;
@@ -136,8 +136,27 @@ uint8_t DSEngine::init(){
 	vertex_shader = glCreateShader(GL_VERTEX_SHADER);
 	glShaderSource(vertex_shader, 1, shaderMap.getShader("test", ShaderType::Vertex), NULL);
 	glCompileShader(vertex_shader);
+	std::cout << "Initialized vertex_shader" << std::endl;
 
-	// std::cout << "Initialized vertex_shader" << std::endl;
+	fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(fragment_shader, 1, shaderMap.getShader("test", ShaderType::Fragment), NULL);
+	glCompileShader(fragment_shader);
+	std::cout << "Initialized Fragment Shader" << std::endl;
+
+	program = glCreateProgram();
+	glAttachShader(program, vertex_shader);
+	glAttachShader(program, fragment_shader);
+	glLinkProgram(program);
+	std::cout << "Linked and Attached program" << std::endl;
+
+	mvp_location = glGetUniformLocation(program, "MVP");
+	vpos_location = glGetAttribLocation(program, "vPos");
+	vcol_location = glGetAttribLocation(program, "vCol");
+
+	glEnableVertexAttribArray(vpos_location);
+	glVertexAttribPointer(vpos_location, 2, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), (void*) 0);
+	glEnableVertexAttribArray(vcol_location);
+	glVertexAttribPointer(vcol_location, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), (void*)(sizeof(float) * 2));
 
 	std::cout << "Initialized OpenGL" << std::endl;
 	return EXIT_SUCCESS;
