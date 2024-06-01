@@ -5,15 +5,10 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
+#define DEBUG
+
 DSEngine::DSEngine() : showDebug(false) { // Will try to initialize GLFW and imgui.
-	// Setup shader map with default test shaders.
-	shaderMap.addShader("../shaders/test.frag");
-	shaderMap.addShader("../shaders/test.vert");
-
-	shaderMap.showShaders();
-
 	init();
-
 	std::cout << "Constructed DSEngine" << std::endl;
 };
 
@@ -74,13 +69,15 @@ uint8_t DSEngine::init(){
     // GL 3.2 + GLSL 150
     const char* glsl_version = "#version 150";
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
+#ifdef DEBUG
 	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE); //Debug messages.
 #endif
-	
-	//Create the glfw window held in DSEngine.
+#endif
+
+	//Create the glfw window held in DSEngine.	
 	window = glfwCreateWindow(800, 640, "DSRender", NULL, NULL);
 	if(!window){
 		std::cerr << "Failed to init glfwWindow" << std::endl;
@@ -113,15 +110,14 @@ uint8_t DSEngine::init(){
 		return EXIT_FAILURE;
 	}
 
+	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+	glDebugMessageCallback(glDebugOutput, nullptr);
+
 	const GLubyte* renderer = glGetString(GL_RENDERER); // Get renderer string
 	const GLubyte* version = glGetString(GL_VERSION); // Version as a string
 
 	std::cout << "Renderer: " << renderer << std::endl;
 	std::cout << "OpenGL version supported: " << version << std::endl;
-
-	glEnable(GL_DEBUG_OUTPUT);
-	// glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-	glDebugMessageCallback(glDebugOutput, nullptr);
 
 	std::cout << "Initialized GLFW Window" << std::endl;
 
@@ -132,26 +128,18 @@ uint8_t DSEngine::init(){
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 	std::cout << "Initialized vertex_buffer" << std::endl;
 
-	// Vertex shader
-	vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vertex_shader, 1, shaderMap.getShader("test", ShaderType::Vertex), NULL);
-	glCompileShader(vertex_shader);
-	std::cout << "Initialized vertex_shader" << std::endl;
+	Shader testShader("../shaders/test.vert", "../shaders/test.frag");
+	program = testShader.ID; //This seems kinda dumb
 
-	fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragment_shader, 1, shaderMap.getShader("test", ShaderType::Fragment), NULL);
-	glCompileShader(fragment_shader);
-	std::cout << "Initialized Fragment Shader" << std::endl;
-
-	program = glCreateProgram();
-	glAttachShader(program, vertex_shader);
-	glAttachShader(program, fragment_shader);
-	glLinkProgram(program);
-	std::cout << "Linked and Attached program" << std::endl;
+	std::cout << "Test shaders compiled and linked successfully" << std::endl;
 
 	mvp_location = glGetUniformLocation(program, "MVP");
 	vpos_location = glGetAttribLocation(program, "vPos");
 	vcol_location = glGetAttribLocation(program, "vCol");
+
+	std::cout << "mvp_location:" << mvp_location << std::endl;
+	std::cout << "vpos_location:" << vpos_location << std::endl;
+	std::cout << "vcol_location:" << vcol_location << std::endl;
 
 	glEnableVertexAttribArray(vpos_location);
 	glVertexAttribPointer(vpos_location, 2, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), (void*) 0);
