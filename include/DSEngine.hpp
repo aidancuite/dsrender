@@ -61,8 +61,11 @@ private:
 	//OpenGL things.
 	GLuint VBO; 
 	GLuint VAO;
+	GLuint EBO;
 
 	std::vector<Shader> shaders;
+	GLuint texture;
+	
 	bool showDebug;
 
 	// Callbacks for GLFW

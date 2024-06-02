@@ -123,28 +123,70 @@ uint8_t DSEngine::init(){
 
 	float vertices[] = {
         // positions         // colors
-         0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,  // bottom right
-        -0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,  // bottom left
-         0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f   // top 
+         0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f, 0.0f, 0.0f, // bottom right
+        -0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f, 1.0f, 0.0f, // bottom left
+         0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f, 0.5f, 1.0f // top 
     };
+	unsigned int indices[] = {
+		0, 1, 3, // first triangle
+		1, 2, 3  // second triangle
+	};
 
-	//Setup OpenGL structs.
-	//Vertex Buffer
-	glGenBuffers(1, &VBO); //Generates one vertex buffer
-	glGenVertexArrays(1, &VAO);
-	glBindVertexArray(VAO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO); //Binds a buffer to a specific purpose/target.
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-	std::cout << "Initialized vertex_buffer/array" << std::endl;
+	// GLuint texture;
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // set texture filtering parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	int width, height, nrChannels;
+	
+	unsigned char* data = stbi_load("../textures/green.jpg", &width, &height, &nrChannels, 0);
+	if(data){
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	} else {
+		std::cout << "Failed to load texture" << std::endl;
+	}
+
+	stbi_image_free(data);
 
 	shaders.push_back(Shader("../shaders/test.vert", "../shaders/test.frag"));
 	std::cout << "Test shaders compiled and linked successfully" << std::endl;;
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)0); //0 Is index of VAO
+	// SHADERS
+	// Vertex Buffer
+	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO); //Generates one vertex buffer
+	glGenBuffers(1, &EBO);
+
+	std::cout << "Generated EBO/VBO/VAO" << std::endl;
+	
+	glBindVertexArray(VAO);
+
+	std::cout << "Bound VAO" << std::endl;
+
+	glBindBuffer(GL_ARRAY_BUFFER, VBO); //Binds a buffer to a specific purpose/target.
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	std::cout << "Bound VBO" << std::endl;
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+	std::cout << "Initialized vertex_buffer/array" << std::endl;
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)0); //0 Is index of VAO
 	glEnableVertexAttribArray(0);
 
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)(3 * sizeof(float))); //1 Is index of VBO
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)(3 * sizeof(float))); //1 Is index of VBO
 	glEnableVertexAttribArray(1);
+
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+	glEnableVertexAttribArray(2);
 	
 	// std::cout << "Shaders compiled: " << shaders.size() << std::endl;
 	std::cout << "Initialized OpenGL" << std::endl;	
@@ -177,7 +219,10 @@ uint8_t DSEngine::run(){
 		if(first){
 			std::cout << "Begin mainloop" << std::endl;
 			first = false;
-		}
+		} 
+		// else {
+			// exit(EXIT_FAILURE);
+		// }
 		
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
@@ -196,7 +241,7 @@ uint8_t DSEngine::run(){
 
         if (ImGui::Button("Button")) { // Buttons return true when clicked (most widgets return true when edited/activated)
 			counter++;
-		}                           
+		}
                 
         ImGui::SameLine();
         ImGui::Text("counter = %d", counter);
@@ -206,12 +251,16 @@ uint8_t DSEngine::run(){
 		int width, height;
 		glfwGetFramebufferSize(window, &width, &height);
 		glViewport(0, 0, width, height);
-		glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
+		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
+
+		// Bind Texture
+		glBindTexture(GL_TEXTURE_2D, texture);
 
 		shaders[0].use();
 		glBindVertexArray(VAO);
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 		if(showDebug){ //Only draw imgui window if displaying debug.
 			ImGui::Render(); // Render current ImGui frame to window. 
