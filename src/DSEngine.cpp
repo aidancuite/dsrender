@@ -170,8 +170,9 @@ uint8_t DSEngine::init(){
 	// std::cout << "Shaders compiled: " << shaders.size() << std::endl;
 
 	// Create texture
-	glGenTextures(1, &texture);
-	glBindTexture(GL_TEXTURE_2D, texture);
+	glGenTextures(1, &texture0);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture0);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -186,10 +187,31 @@ uint8_t DSEngine::init(){
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 	} else {
+		std::cout << "Failed to load texture0" << std::endl;
+	}
+	stbi_image_free(data);
+
+	glGenTextures(1, &texture1);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, texture1);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // set texture filtering parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	stbi_set_flip_vertically_on_load(true); 
+	data = stbi_load("../textures/stew.jpg", &width, &height, &nrChannels, 0);
+	if(data){
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	} else {
 		std::cout << "Failed to load texture" << std::endl;
 	}
-
+	stbi_set_flip_vertically_on_load(false); 
 	stbi_image_free(data);
+
 	std::cout << "Initialized OpenGL" << std::endl;	
 	return EXIT_SUCCESS;
 }
@@ -214,6 +236,10 @@ uint8_t DSEngine::run(){
 	double upTime = 0;
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 	ImVec2 debug_pos = ImVec2(0.0f, 0.0f);
+
+	shaders[0].use();
+	shaders[0].setInt("texture0", 0);
+	shaders[0].setInt("texture1", 1);
 
 	bool first = true;
 	while(!glfwWindowShouldClose(window)){  
@@ -255,10 +281,13 @@ uint8_t DSEngine::run(){
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		// Bind Texture
-		glBindTexture(GL_TEXTURE_2D, texture);
+		// Bind Textures
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, texture0);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, texture1);
 
-		shaders[0].use();
+		// shaders[0].use();
 		glBindVertexArray(VAO);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);

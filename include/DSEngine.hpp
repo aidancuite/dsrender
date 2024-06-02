@@ -64,7 +64,8 @@ private:
 	GLuint EBO;
 
 	std::vector<Shader> shaders;
-	GLuint texture;
+	GLuint texture0;
+	GLuint texture1;
 	
 	bool showDebug;
 
