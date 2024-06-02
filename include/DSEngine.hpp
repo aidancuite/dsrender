@@ -9,6 +9,8 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
+#include "../3rdparty/stb_image.h"
+
 #include "Shader.hpp"
 
 static void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const char* message, const void* userParam) {
@@ -59,7 +61,6 @@ private:
 	//OpenGL things.
 	GLuint VBO; 
 	GLuint VAO;
-	GLuint program;
 
 	std::vector<Shader> shaders;
 	bool showDebug;

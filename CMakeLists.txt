@@ -15,6 +15,7 @@ include_directories(
 	${GLFW_DIR}/deps
 	${GLFW_DIR}/deps/glad
 	${CMAKE_CURRENT_SOURCE_DIR}/include
+	${CMAKE_CURRENT_SOURCE_DIR}/3rdparty
 )
 
 file(GLOB IMGUI_SOURCES ${IMGUI_DIR}/*.cpp)

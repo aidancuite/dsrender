@@ -3,6 +3,9 @@
 #define GLAD_GL_IMPLEMENTATION
 #include <glad/gl.h>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "../3rdparty/stb_image.h"
+
 int main() {
 	DSEngine engine;
 

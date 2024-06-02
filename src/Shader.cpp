@@ -1,5 +1,6 @@
 #include "shader.hpp"
 
+//Exit on failed shader compilation.
 Shader::Shader(const char* vertexPath, const char* fragmentPath){
 	std::string vertexCode;
 	std::string fragmentCode;
