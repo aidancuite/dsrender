@@ -119,6 +119,8 @@ uint8_t DSEngine::init(){
 	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 	glDebugMessageCallback(glDebugOutput, nullptr);
 
+	glEnable(GL_DEPTH_TEST);
+
 	const GLubyte* renderer = glGetString(GL_RENDERER); // Get renderer string
 	const GLubyte* version = glGetString(GL_VERSION); // Version as a string
 
@@ -128,15 +130,31 @@ uint8_t DSEngine::init(){
 	std::cout << "Initialized GLFW Window" << std::endl;
 
 	float vertices[] = {
-        // positions          // colors           // texture coords (x, y)
-         0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f, // top right
-         0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f, // bottom right
-        -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f, // bottom left
-        -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f  // top left 
-    };
+		// positions          // colors           // texture coords
+		-0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 0.0f,   0.0f, 0.0f, // 0
+		0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 0.0f,   1.0f, 0.0f, // 1
+		0.5f,  0.5f, -0.5f,  0.0f, 0.0f, 1.0f,   1.0f, 1.0f, // 2
+		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 0.0f,   0.0f, 1.0f, // 3
+		-0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 1.0f,   1.0f, 0.0f, // 4
+		0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 1.0f,   0.0f, 0.0f, // 5
+		0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 0.0f,   0.0f, 1.0f, // 6
+		-0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 1.0f,   1.0f, 1.0f  // 7
+	};
+
 	unsigned int indices[] = {
-		0, 1, 3, // first triangle
-		1, 2, 3  // second triangle
+		// Each triplet represents one triangle
+		// Front face
+		0, 1, 2, 0, 2, 3,
+		// Right face
+		1, 5, 6, 1, 6, 2,
+		// Back face
+		5, 4, 7, 5, 7, 6,
+		// Left face
+		4, 0, 3, 4, 3, 7,
+		// Bottom face
+		4, 5, 1, 4, 1, 0,
+		// Top face
+		3, 2, 6, 3, 6, 7
 	};
 
 	shaders.push_back(Shader("../shaders/test.vert", "../shaders/test.frag"));
@@ -261,6 +279,8 @@ uint8_t DSEngine::run(){
 			std::cout << "Begin mainloop" << std::endl;
 			first = false;
 		} 
+
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
@@ -285,6 +305,23 @@ uint8_t DSEngine::run(){
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
         ImGui::End();
 
+		//Scaling rotation matrices.
+		glm::mat4 model = glm::mat4(1.0f); // Model space
+		model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+
+		glm::mat4 view = glm::mat4(1.0f); // View Space
+		view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+
+		int window_width;
+		int window_height;
+		glfwGetWindowSize(window, &window_width, &window_height);
+
+		float win_w = static_cast<float>(window_width);
+		float win_h = static_cast<float>(window_height);
+
+		glm::mat4 projection;
+		projection = glm::perspective(glm::radians(45.0f), win_w/win_h, 0.1f, 100.0f);
+
 		glm::mat4 trans = glm::mat4(1.0f);
 		trans = glm::translate(trans, glm::vec3(pos_x, pos_y, 0.0f));
 		trans = glm::rotate(trans, glm::radians(rotation), glm::vec3(0.0, 0.0, 1.0));
@@ -300,6 +337,9 @@ uint8_t DSEngine::run(){
 
 		//This passes a value called transform into our shader. (uniform location, num of mat, to transpose, convert data to good format.)
 		glUniformMatrix4fv(glGetUniformLocation(shaders[0].ID, "transform"), 1, GL_FALSE, glm::value_ptr(trans));
+		glUniformMatrix4fv(glGetUniformLocation(shaders[0].ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
+		glUniformMatrix4fv(glGetUniformLocation(shaders[0].ID, "view"), 1, GL_FALSE, glm::value_ptr(view));
+		glUniformMatrix4fv(glGetUniformLocation(shaders[0].ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
 		// Bind Textures
 		glActiveTexture(GL_TEXTURE0);
@@ -309,7 +349,7 @@ uint8_t DSEngine::run(){
 
 		glBindVertexArray(VAO);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 
 		if(showDebug){ //Only draw imgui window if displaying debug.
 			ImGui::Render(); // Render current ImGui frame to window. 

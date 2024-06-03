@@ -15,5 +15,5 @@ void main()
 {
 	// FragColor = texture(texture1, texCoord) * vec4(color, 1.0);
 	// vec2 dog = vec2(-texCoord.x, texCoord.y);
-	FragColor = mix(texture(texture0, texCoord), texture(texture1, texCoord), sel) * vec4(color, 1.0f);
+	FragColor = mix(texture(texture0, texCoord), texture(texture1, texCoord), sel);// * vec4(color, 1.0f);
 }
