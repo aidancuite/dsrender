@@ -8,12 +8,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 #ImGui
 set(IMGUI_DIR ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/imgui)
 set(GLFW_DIR ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/glfw)
+set(GLM_DIR ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/glm)
+
 include_directories(
 	${IMGUI_DIR}
 	${IMGUI_DIR}/backends
 	${GLFW_DIR}/include
 	${GLFW_DIR}/deps
 	${GLFW_DIR}/deps/glad
+	${GLM_DIR}
 	${CMAKE_CURRENT_SOURCE_DIR}/include
 	${CMAKE_CURRENT_SOURCE_DIR}/3rdparty
 )
@@ -25,6 +28,7 @@ file(GLOB_RECURSE SOURCES "src/*.cpp")
 
 # Add CmakeLists.txt subdirectories. This handles building glfw
 add_subdirectory(3rdparty/glfw)
+add_subdirectory(3rdparty/glm)
 
 # Add executable
 add_executable(DSRender main.cpp ${IMGUI_SOURCES} ${IMGUI_BACKENDS} ${SOURCES})

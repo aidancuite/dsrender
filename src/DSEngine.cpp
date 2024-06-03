@@ -34,6 +34,12 @@ void DSEngine::key_callback(GLFWwindow* window, int key, int scancode, int actio
 			if(key == GLFW_KEY_BACKSLASH){
 				engine->toggleDebug();
 			}
+			// if (key == GLFW_KEY_PAGE_UP){
+			// 	engine->toggle = std::min(1.0f, engine->toggle + 0.05f);
+			// }
+			// if (key == GLFW_KEY_PAGE_DOWN){
+			// 	engine->toggle = std::max(0.0f, engine->toggle - 0.05f);
+			// }
 		} else {
 			// std::cout << "Failed to cast engine" << std::endl;
 		}
@@ -242,28 +248,32 @@ uint8_t DSEngine::run(){
 	shaders[0].setInt("texture1", 1);
 
 	bool first = true;
+
+	//ImGui values
+	static float f = 0.0f;
+    static int counter = 0;	
+	static float rotation = 0;
+	static float pos_x = 0;
+	static float pos_y = 0;
+
 	while(!glfwWindowShouldClose(window)){  
 		if(first){
 			std::cout << "Begin mainloop" << std::endl;
 			first = false;
 		} 
-		// else {
-			// exit(EXIT_FAILURE);
-		// }
 		
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 		ImGui::SetNextWindowPos(debug_pos, ImGuiCond_Always);
 
-		//ImGui example frame.
-		static float f = 0.0f;
-        static int counter = 0;		
-
         ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
         ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
 
-        ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+        ImGui::SliderFloat("Phase", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+		ImGui::SliderFloat("Rotation", &rotation, 0.0f, 360.0f);
+		ImGui::SliderFloat("Pos-X", &pos_x, -1.0f, 1.0f);
+		ImGui::SliderFloat("Pos-Y", &pos_y, -1.0f, 1.0f);
         ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
 
         if (ImGui::Button("Button")) { // Buttons return true when clicked (most widgets return true when edited/activated)
@@ -275,11 +285,21 @@ uint8_t DSEngine::run(){
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
         ImGui::End();
 
+		glm::mat4 trans = glm::mat4(1.0f);
+		trans = glm::translate(trans, glm::vec3(pos_x, pos_y, 0.0f));
+		trans = glm::rotate(trans, glm::radians(rotation), glm::vec3(0.0, 0.0, 1.0));
+		trans = glm::scale(trans, glm::vec3(0.5, 0.5, 0.5));
+
 		int width, height;
 		glfwGetFramebufferSize(window, &width, &height);
 		glViewport(0, 0, width, height);
-		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+		glClearColor(clear_color.x, clear_color.y, clear_color.z, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
+
+		glUniform1f(glGetUniformLocation(shaders[0].ID, "sel"), f); //Assign uniform to take sel value.
+
+		//This passes a value called transform into our shader. (uniform location, num of mat, to transpose, convert data to good format.)
+		glUniformMatrix4fv(glGetUniformLocation(shaders[0].ID, "transform"), 1, GL_FALSE, glm::value_ptr(trans));
 
 		// Bind Textures
 		glActiveTexture(GL_TEXTURE0);
@@ -287,7 +307,6 @@ uint8_t DSEngine::run(){
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, texture1);
 
-		// shaders[0].use();
 		glBindVertexArray(VAO);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
