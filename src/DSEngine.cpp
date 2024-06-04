@@ -138,7 +138,6 @@ uint8_t DSEngine::init(){
 	glGenBuffers(1, &VBO); //Generates one vertex buffer
 	//glGenBuffers(1, &EBO);
 
-
 	std::cout << "Generated EBO/VBO/VAO" << std::endl;
 	
 	glBindVertexArray(VAO);
