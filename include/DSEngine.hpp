@@ -16,6 +16,7 @@
 #include "../3rdparty/stb_image.h"
 
 #include "Shader.hpp"
+#include "testVertices.hpp"
 
 static void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const char* message, const void* userParam) {
     // Ignore non-significant error/warning codes
