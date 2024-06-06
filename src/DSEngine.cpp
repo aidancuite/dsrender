@@ -34,12 +34,9 @@ void DSEngine::key_callback(GLFWwindow* window, int key, int scancode, int actio
 			if(key == GLFW_KEY_BACKSLASH){
 				engine->toggleDebug();
 			}
-			// if (key == GLFW_KEY_PAGE_UP){
-			// 	engine->toggle = std::min(1.0f, engine->toggle + 0.05f);
-			// }
-			// if (key == GLFW_KEY_PAGE_DOWN){
-			// 	engine->toggle = std::max(0.0f, engine->toggle - 0.05f);
-			// }
+			if(key == GLFW_KEY_W){
+				
+			}
 		} else {
 			// std::cout << "Failed to cast engine" << std::endl;
 		}
@@ -71,7 +68,7 @@ uint8_t DSEngine::init(){
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // Required on Mac
-#elif defined(__WIN32__)
+#elif defined(__WIN32__) || defined(_WIN32)
     // GL 3.2 + GLSL 150
     const char* glsl_version = "#version 450";
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -246,6 +243,11 @@ uint8_t DSEngine::run(){
 	static float pos_x = 0;
 	static float pos_y = 0;
 
+	glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f,  3.0f);
+	glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+	glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
+
+
 	while(!glfwWindowShouldClose(window)){  
 		if(first){
 			std::cout << "Begin mainloop" << std::endl;
@@ -278,11 +280,14 @@ uint8_t DSEngine::run(){
         ImGui::End();
 
 		//Scaling rotation matrices.
-		glm::mat4 model = glm::mat4(1.0f); // Model space
-		model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		// glm::mat4 view = glm::mat4(1.0f); // View Space
+		// view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
 
-		glm::mat4 view = glm::mat4(1.0f); // View Space
-		view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+		const float radius = 10.0f;
+		float camX = sin(glfwGetTime() * radius);
+		float camZ = cos(glfwGetTime() * radius);
+		glm::mat4 view;
+		view = glm::lookAt(glm::normalize(cameraPos), glm::normalize(cameraPos + cameraFront), glm::normalize(cameraUp));
 
 		int window_width;
 		int window_height;
@@ -309,7 +314,6 @@ uint8_t DSEngine::run(){
 
 		//This passes a value called transform into our shader. (uniform location, num of mat, to transpose, convert data to good format.)
 		glUniformMatrix4fv(glGetUniformLocation(shaders[0].ID, "transform"), 1, GL_FALSE, glm::value_ptr(trans));
-		glUniformMatrix4fv(glGetUniformLocation(shaders[0].ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
 		glUniformMatrix4fv(glGetUniformLocation(shaders[0].ID, "view"), 1, GL_FALSE, glm::value_ptr(view));
 		glUniformMatrix4fv(glGetUniformLocation(shaders[0].ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
@@ -320,7 +324,17 @@ uint8_t DSEngine::run(){
 		glBindTexture(GL_TEXTURE_2D, texture1);
 
 		glBindVertexArray(VAO);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		for(unsigned int i = 0; i < 10; i++){
+			glm::mat4 model = glm::mat4(1.0f); // Model space
+			model = glm::translate(model, cubePos[i]);
+			float angle = 20.0f * i;
+			model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.0f, 0.0f));
+			// Handoff new model position to shader.
+			glUniformMatrix4fv(glGetUniformLocation(shaders[0].ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
+
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+		}
+		
 		//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 		// glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 
